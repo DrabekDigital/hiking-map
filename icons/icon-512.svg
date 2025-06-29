@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Map Background -->
+  <rect x="25" y="25" width="462" height="462" fill="#f8f5e8" stroke="#d4d4aa" stroke-width="6" rx="20"/>
+  
+  <!-- Topographic Contour Lines -->
+  <path d="M75 125 Q175 100, 275 125 T425 150" fill="none" stroke="#c8d4b8" stroke-width="4" opacity="0.7"/>
+  <path d="M50 200 Q150 175, 250 200 T450 225" fill="none" stroke="#c8d4b8" stroke-width="4" opacity="0.7"/>
+  <path d="M75 275 Q200 250, 325 275 T425 300" fill="none" stroke="#c8d4b8" stroke-width="4" opacity="0.7"/>
+  <path d="M50 350 Q175 325, 300 350 T450 375" fill="none" stroke="#c8d4b8" stroke-width="4" opacity="0.7"/>
+  
+  <!-- Additional fine contour lines -->
+  <path d="M60 162 Q160 137, 260 162 T440 187" fill="none" stroke="#d8e4c8" stroke-width="2" opacity="0.5"/>
+  <path d="M80 237 Q180 212, 280 237 T420 262" fill="none" stroke="#d8e4c8" stroke-width="2" opacity="0.5"/>
+  <path d="M65 312 Q190 287, 315 312 T435 337" fill="none" stroke="#d8e4c8" stroke-width="2" opacity="0.5"/>
+  
+  <!-- Mountain/Hill Symbols -->
+  <polygon points="125,175 150,125 175,175" fill="#b8c8a8" opacity="0.6"/>
+  <polygon points="325,250 360,190 395,250" fill="#b8c8a8" opacity="0.6"/>
+  <polygon points="180,320 205,280 230,320" fill="#a8b898" opacity="0.5"/>
+  
+  <!-- Grid Lines (subtle) -->
+  <line x1="170" y1="25" x2="170" y2="487" stroke="#e8e8d8" stroke-width="2" opacity="0.4"/>
+  <line x1="342" y1="25" x2="342" y2="487" stroke="#e8e8d8" stroke-width="2" opacity="0.4"/>
+  <line x1="25" y1="170" x2="487" y2="170" stroke="#e8e8d8" stroke-width="2" opacity="0.4"/>
+  <line x1="25" y1="342" x2="487" y2="342" stroke="#e8e8d8" stroke-width="2" opacity="0.4"/>
+  
+  <!-- Track 1 - Orange Trail -->
+  <path d="M75 75 Q125 150, 175 125 Q225 100, 275 175 Q325 250, 375 225 Q425 200, 450 275" 
+        fill="none" 
+        stroke="white" 
+        stroke-width="20" 
+        stroke-linecap="round" 
+        opacity="0.9"/>
+  <path d="M75 75 Q125 150, 175 125 Q225 100, 275 175 Q325 250, 375 225 Q425 200, 450 275" 
+        fill="none" 
+        stroke="#FF6600" 
+        stroke-width="12" 
+        stroke-linecap="round"/>
+  
+  <!-- Track 2 - Blue Trail -->
+  <path d="M100 400 Q150 325, 200 350 Q250 375, 300 300 Q350 225, 400 325 Q425 375, 450 425" 
+        fill="none" 
+        stroke="white" 
+        stroke-width="20" 
+        stroke-linecap="round" 
+        opacity="0.9"/>
+  <path d="M100 400 Q150 325, 200 350 Q250 375, 300 300 Q350 225, 400 325 Q425 375, 450 425" 
+        fill="none" 
+        stroke="#2E86C1" 
+        stroke-width="12" 
+        stroke-linecap="round"/>
+  
+  <!-- Location Markers -->
+  <circle cx="75" cy="75" r="10" fill="#FF6600" stroke="white" stroke-width="4"/>
+  <circle cx="450" cy="275" r="10" fill="#FF6600" stroke="white" stroke-width="4"/>
+  <circle cx="100" cy="400" r="10" fill="#2E86C1" stroke="white" stroke-width="4"/>
+  <circle cx="450" cy="425" r="10" fill="#2E86C1" stroke="white" stroke-width="4"/>
+  
+  <!-- Compass Rose (larger, more detailed) -->
+  <g transform="translate(425, 75)">
+    <circle cx="0" cy="0" r="30" fill="white" stroke="#8B4513" stroke-width="4" opacity="0.95"/>
+    <polygon points="0,-20 7.5,0 0,20 -7.5,0" fill="#8B4513"/>
+    <polygon points="0,-15 4,0 0,15 -4,0" fill="#CD853F"/>
+    <text x="0" y="6" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#8B4513" font-weight="bold">N</text>
+    <!-- Cardinal directions -->
+    <text x="22" y="4" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#8B4513">E</text>
+    <text x="0" y="26" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#8B4513">S</text>
+    <text x="-22" y="4" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#8B4513">W</text>
+  </g>
+  
+  <!-- Scale indicator -->
+  <g transform="translate(50, 450)">
+    <rect x="0" y="0" width="80" height="25" fill="white" stroke="#666" stroke-width="2" opacity="0.9" rx="3"/>
+    <line x1="10" y1="5" x2="30" y2="5" stroke="#333" stroke-width="3"/>
+    <line x1="10" y1="2" x2="10" y2="8" stroke="#333" stroke-width="2"/>
+    <line x1="30" y1="2" x2="30" y2="8" stroke="#333" stroke-width="2"/>
+    <text x="20" y="18" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#333">1 km</text>
+  </g>
+</svg> 

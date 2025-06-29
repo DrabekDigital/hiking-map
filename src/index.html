@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiking Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>GPX Tracks</h2>
+                <div id="selectedInfo" class="selected-info">
+                    <span>No folder selected - uploads to root</span>
+                </div>
+                <div class="sidebar-actions">
+                    <button id="uploadBtn" class="btn btn-primary">
+                        <span id="uploadBtnText">Upload GPX</span>
+                    </button>
+                    <button id="createFolderBtn" class="btn btn-secondary">New Folder</button>
+                </div>
+                <div class="sidebar-controls">
+                    <button id="selectAllBtn" class="btn btn-control-small">☑️ Select All</button>
+                    <button id="deselectAllBtn" class="btn btn-control-small">☐ Deselect All</button>
+                </div>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="file-tree" id="fileTree">
+                    <div class="loading">Loading tracks...</div>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="stats">
+                    <span id="trackCount">0 tracks loaded</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content -->
+        <div class="main-content">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            
+            <!-- Map controls -->
+            <div class="map-controls">
+                <button id="settingsBtn" class="btn btn-control">⚙️ Settings</button>
+                <button id="fitBoundsBtn" class="btn btn-control">Fit All Tracks</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for creating new folder -->
+    <div id="folderModal" class="modal">
+        <div class="modal-content">
+            <h3>Create New Folder</h3>
+            <input type="text" id="folderNameInput" placeholder="Folder name" />
+            <div class="modal-actions">
+                <button id="createFolderConfirm" class="btn btn-primary">Create</button>
+                <button id="cancelFolderCreate" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content settings-modal">
+            <h3>⚙️ Application Settings</h3>
+            
+            <div class="settings-section">
+                <h4>Map Provider</h4>
+                <div class="setting-item">
+                    <label>
+                        <input type="radio" name="mapProvider" value="osm" id="osmRadio">
+                        <span>OpenStreetMap (Free)</span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>
+                        <input type="radio" name="mapProvider" value="mapy" id="mapyRadio">
+                        <span>Mapy.cz (Czech Maps)</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="settings-section" id="mapySection">
+                <h4>Mapy.cz Configuration</h4>
+                <div class="setting-item">
+                    <label>API Key:</label>
+                    <input type="text" id="mapyApiKey" placeholder="Enter your Mapy.cz API key" />
+                    <div class="setting-help">
+                        Get your free API key at <a href="https://developer.mapy.com/" target="_blank">developer.mapy.com</a>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>Map Style:</label>
+                    <select id="mapyStyle">
+                        <option value="basic">Basic</option>
+                        <option value="outdoor">Outdoor</option>
+                        <option value="winter">Winter</option>
+                        <option value="aerial">Aerial</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="saveSettings" class="btn btn-primary">Save Settings</button>
+                <button id="cancelSettings" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Color Picker Modal -->
+    <div id="colorModal" class="modal">
+        <div class="modal-content">
+            <h3 id="colorModalTitle">Choose Folder Color</h3>
+            <div class="color-picker-section">
+                <label for="colorPicker">Color:</label>
+                <input type="color" id="colorPicker" value="#FF6600" />
+                <div class="color-preview">
+                    <div id="colorPreview" class="color-preview-circle"></div>
+                    <span id="colorValue">#FF6600</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="confirmColorChange" class="btn btn-primary">Apply Color</button>
+                <button id="cancelColorChange" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="renderer.js"></script>
+</body>
+</html> 

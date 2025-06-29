@@ -1,0 +1,55 @@
+{
+  "name": "hiking-map",
+  "version": "1.0.0",
+  "description": "Electron app for visualizing hiking GPX tracks on OpenStreetMap or Mapy.cz",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build-mac": "electron-builder --mac",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [
+    "hiking",
+    "gpx",
+    "map",
+    "electron",
+    "leaflet"
+  ],
+  "author": "Drábek.digital s.r.o.",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "fs-extra": "^11.0.0"
+  },
+  "build": {
+    "appId": "com.yourcompany.hiking-map",
+    "productName": "Hiking Map",
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "category": "public.app-category.sports",
+      "target": "dmg",
+      "icon": "icons/icon-512.png"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "icons/icon-256.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "icons/icon-512.png"
+    },
+    "files": [
+      "src/**/*",
+      "icons/**/*",
+      "node_modules/**/*"
+    ]
+  }
+} 

@@ -1,0 +1,597 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #f5f5f5;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 380px; /* Increased width to accommodate longer names */
+  background-color: #ffffff;
+  border-right: 1px solid #e1e5e9;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid #e1e5e9;
+  background-color: #fafbfc;
+}
+
+.sidebar-header h2 {
+  color: #24292e;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.selected-info {
+  font-size: 12px;
+  color: #586069;
+  margin-bottom: 12px;
+  padding: 6px 8px;
+  background-color: #f6f8fa;
+  border-radius: 4px;
+  border-left: 3px solid #0366d6;
+}
+
+.sidebar-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sidebar-controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto; /* Allow horizontal scroll if needed */
+  padding: 16px;
+}
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e1e5e9;
+  background-color: #fafbfc;
+}
+
+.stats {
+  font-size: 12px;
+  color: #586069;
+}
+
+/* Buttons */
+.btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background-color: #0366d6;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #0256cc;
+}
+
+.btn-secondary {
+  background-color: #f3f4f6;
+  color: #24292e;
+  border: 1px solid #d1d5da;
+}
+
+.btn-secondary:hover {
+  background-color: #f9f9f9;
+}
+
+.btn-control {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #24292e;
+  border: 1px solid rgba(27, 31, 35, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.btn-control:hover {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+.btn-control-small {
+  background-color: #f3f4f6;
+  color: #24292e;
+  border: 1px solid #d1d5da;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.btn-control-small:hover {
+  background-color: #f9f9f9;
+}
+
+.btn-danger {
+  background-color: #d73a49;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #cb2431;
+}
+
+.btn-danger:disabled {
+  background-color: #fafbfc;
+  color: #d1d5da;
+  cursor: not-allowed;
+}
+
+.btn-danger:disabled:hover {
+  background-color: #fafbfc;
+  transform: none;
+}
+
+/* File Tree */
+.file-tree {
+  user-select: none;
+}
+
+.loading {
+  color: #586069;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+.tree-item {
+  display: block; /* Changed from flex to block for proper vertical stacking */
+  padding: 0;
+  margin: 2px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative;
+  width: 100%;
+}
+
+.tree-item-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+.tree-item:hover .tree-item-row {
+  background-color: #f1f8ff;
+}
+
+.tree-item.selected .tree-item-row {
+  background-color: #0366d6;
+  color: white;
+}
+
+.tree-item.folder .tree-item-row {
+  font-weight: 500;
+  color: #0366d6;
+}
+
+.tree-item.folder.selected .tree-item-row {
+  color: white;
+}
+
+.tree-item.file .tree-item-row {
+  color: #24292e;
+}
+
+.tree-item.file.selected .tree-item-row {
+  color: white;
+}
+
+.tree-icon {
+  margin-right: 8px;
+  font-size: 14px;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tree-checkbox {
+  margin-right: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tree-item-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 120px; /* Ensure enough width for content */
+}
+
+.tree-item-text {
+  flex: 1;
+  min-width: 80px; /* Ensure minimum width for text */
+  overflow: visible; /* Allow text to show fully */
+  white-space: nowrap;
+}
+
+.tree-delete {
+  padding: 2px 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #586069;
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.tree-item:hover .tree-delete {
+  opacity: 1;
+}
+
+.tree-delete:hover {
+  background-color: #d73a49;
+  color: white;
+  transform: scale(1.1);
+  opacity: 1; /* Ensure trash icon stays visible when hovering over the icon itself */
+}
+
+.folder-color-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(27, 31, 35, 0.15);
+  cursor: pointer;
+  margin-left: 8px;
+  margin-right: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.folder-color-indicator:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px rgba(3, 102, 214, 0.3);
+}
+
+.tree-toggle {
+  margin-right: 4px;
+  font-size: 12px;
+  color: #586069;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+
+.tree-toggle.expanded {
+  transform: rotate(90deg);
+}
+
+.tree-children {
+  margin-left: 20px; /* Indentation for child items */
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  border-left: 2px solid #e1e5e9; /* Visual connection line */
+  padding-left: 12px;
+}
+
+.tree-children.expanded {
+  max-height: 1000px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.tree-children .tree-item {
+  position: relative;
+}
+
+.tree-children .tree-item::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  width: 8px;
+  height: 1px;
+  background-color: #d1d5da;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-container {
+  flex: 1;
+  position: relative;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+}
+
+/* Map Controls */
+.map-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1000;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 10000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.modal.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  min-width: 300px;
+  max-width: 90%;
+}
+
+.modal-content h3 {
+  margin-bottom: 16px;
+  color: #24292e;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.modal-content input[type="text"] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5da;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  outline: none;
+}
+
+.modal-content input[type="text"]:focus {
+  border-color: #0366d6;
+  box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.1);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Settings Modal */
+.settings-modal {
+  min-width: 500px;
+  max-width: 600px;
+}
+
+.settings-section {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.settings-section:last-of-type {
+  border-bottom: none;
+}
+
+.settings-section h4 {
+  margin-bottom: 12px;
+  color: #24292e;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.setting-item {
+  margin-bottom: 16px;
+}
+
+.setting-item:last-child {
+  margin-bottom: 0;
+}
+
+.setting-item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #24292e;
+  margin-bottom: 8px;
+}
+
+.setting-item input[type="radio"] {
+  margin: 0;
+  width: auto;
+}
+
+.setting-item input[type="text"] {
+  margin-bottom: 8px;
+}
+
+.setting-item select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5da;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+  outline: none;
+}
+
+.setting-item select:focus {
+  border-color: #0366d6;
+  box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.1);
+}
+
+.setting-help {
+  font-size: 12px;
+  color: #586069;
+  margin-top: 4px;
+}
+
+.setting-help a {
+  color: #0366d6;
+  text-decoration: none;
+}
+
+.setting-help a:hover {
+  text-decoration: underline;
+}
+
+#mapySection {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+#mapySection.enabled {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Color Picker Modal */
+.color-picker-section {
+  margin-bottom: 20px;
+}
+
+.color-picker-section label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #24292e;
+}
+
+.color-picker-section input[type="color"] {
+  width: 60px;
+  height: 40px;
+  border: 1px solid #d1d5da;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 12px;
+}
+
+.color-picker-section input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker-section input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+.color-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background-color: #f6f8fa;
+  border-radius: 4px;
+  border: 1px solid #e1e5e9;
+}
+
+.color-preview-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(27, 31, 35, 0.15);
+}
+
+.color-preview span {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+  color: #586069;
+  font-weight: 500;
+}
+
+/* Scrollbar styling for webkit browsers */
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 280px;
+  }
+  
+  .map-controls {
+    top: 10px;
+    right: 10px;
+  }
+  
+  .btn-control {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+} 
