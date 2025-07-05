@@ -21,7 +21,14 @@ A modern Electron desktop application for visualizing and managing your hiking G
 - 🇨🇿 **Mapy.cz Integration**: Support for Czech Mapy.cz with multiple map styles
 - 📱 **Modern UI**: Clean, responsive interface optimized for desktop
 
+## Screenshot
+
+![Screenshot](promo/screenshot.png)
+
+
 ## Installation
+
+0. See releases for provided precompiled builds.
 
 1. **Install dependencies**:
    ```bash
