@@ -1,4 +1,17 @@
-const { ipcRenderer } = require('electron');
+// Security: Safe HTML utilities
+function createTextElement(tag, text, className = null) {
+  const element = document.createElement(tag);
+  element.textContent = text; // Safe - no HTML injection
+  if (className) element.className = className;
+  return element;
+}
+
+function sanitizeText(text) {
+  return text.replace(/[<>&"']/g, function(char) {
+    const entities = {'<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#x27;'};
+    return entities[char];
+  });
+}
 
 class HikingMapApp {
   constructor() {
@@ -71,6 +84,9 @@ class HikingMapApp {
     });
     
     this.currentTileLayer.addTo(this.map);
+    
+    // Apply desaturation if enabled
+    this.toggleMapDesaturation();
   }
 
   setupMapyTileLayer() {
@@ -93,6 +109,26 @@ class HikingMapApp {
     });
     
     this.currentTileLayer.addTo(this.map);
+    
+    // Apply desaturation if enabled
+    this.toggleMapDesaturation();
+  }
+
+  toggleMapDesaturation() {
+    const mapElement = document.getElementById('map');
+    const tilePanes = mapElement.querySelectorAll('.leaflet-tile-pane');
+    
+    if (this.settings?.desaturateMap) {
+      // Add desaturation class
+      tilePanes.forEach(pane => {
+        pane.classList.add('desaturated');
+      });
+    } else {
+      // Remove desaturation class
+      tilePanes.forEach(pane => {
+        pane.classList.remove('desaturated');
+      });
+    }
   }
 
   setupEventListeners() {
@@ -214,7 +250,7 @@ class HikingMapApp {
   async loadFileTree() {
     try {
       console.log('Loading file tree...');
-      this.fileTree = await ipcRenderer.invoke('get-gpx-files');
+      this.fileTree = await window.electronAPI.getGpxFiles();
       console.log('File tree loaded:', this.fileTree);
       
       // Initialize checked items if empty (first load)
@@ -253,11 +289,17 @@ class HikingMapApp {
     const fileTreeElement = document.getElementById('fileTree');
     
     if (this.fileTree.length === 0) {
-      fileTreeElement.innerHTML = '<div class="loading">No GPX files found.<br>Upload some tracks to get started!</div>';
+      // Security: Use safe DOM methods instead of innerHTML
+      fileTreeElement.textContent = '';
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'loading';
+      loadingDiv.textContent = 'No GPX files found. Upload some tracks to get started!';
+      fileTreeElement.appendChild(loadingDiv);
       return;
     }
 
-    fileTreeElement.innerHTML = '';
+    // Security: Clear content safely
+    fileTreeElement.textContent = '';
     
     this.fileTree.forEach(item => {
       const itemElement = this.createTreeItem(item);
@@ -506,17 +548,25 @@ class HikingMapApp {
     const selectedInfo = document.getElementById('selectedInfo');
     const uploadBtnText = document.getElementById('uploadBtnText');
     
+    // Security: Clear existing content safely
+    selectedInfo.textContent = '';
+    
     if (this.selectedItem) {
       if (this.selectedItem.type === 'folder') {
         const folderDisplayName = this.selectedItem.path || this.selectedItem.name;
-        selectedInfo.innerHTML = `<span>📁 Selected: "${folderDisplayName}" - uploads will go here</span>`;
+        // Security: Use safe DOM methods instead of innerHTML
+        const span = createTextElement('span', `📁 Selected: "${folderDisplayName}" - uploads will go here`);
+        selectedInfo.appendChild(span);
         uploadBtnText.textContent = `Upload to "${folderDisplayName}"`;
       } else {
-        selectedInfo.innerHTML = `<span>🥾 Selected: "${this.selectedItem.name.replace('.gpx', '')}" (file)</span>`;
+        const fileName = this.selectedItem.name.replace('.gpx', '');
+        const span = createTextElement('span', `🥾 Selected: "${fileName}" (file)`);
+        selectedInfo.appendChild(span);
         uploadBtnText.textContent = 'Upload GPX';
       }
     } else {
-      selectedInfo.innerHTML = '<span>No folder selected - uploads to root</span>';
+      const span = createTextElement('span', 'No folder selected - uploads to root');
+      selectedInfo.appendChild(span);
       uploadBtnText.textContent = 'Upload GPX';
     }
   }
@@ -589,7 +639,7 @@ class HikingMapApp {
       }
 
       // Load and parse GPX file
-      const gpxContent = await ipcRenderer.invoke('read-gpx-file', track.path);
+      const gpxContent = await window.electronAPI.readGpxFile(track.path);
       const gpxData = this.parseGpx(gpxContent);
       
       if (!gpxData || gpxData.length === 0) {
@@ -644,8 +694,24 @@ class HikingMapApp {
 
   parseGpx(gpxContent) {
     try {
+      // Security: Validate XML size to prevent DoS
+      if (gpxContent.length > 50 * 1024 * 1024) { // 50MB limit
+        throw new Error('GPX file too large. Maximum size is 50MB.');
+      }
+      
+      // Security: Basic XML structure validation
+      if (!gpxContent.includes('<gpx') || !gpxContent.includes('</gpx>')) {
+        throw new Error('Invalid GPX file format.');
+      }
+      
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(gpxContent, 'text/xml');
+      
+      // Security: Check for parsing errors
+      const parserError = xmlDoc.getElementsByTagName('parsererror')[0];
+      if (parserError) {
+        throw new Error('Invalid XML format in GPX file.');
+      }
       
       const tracks = [];
       const trkElements = xmlDoc.getElementsByTagName('trk');
@@ -804,7 +870,7 @@ class HikingMapApp {
         console.log('Selected folder for upload:', targetFolder);
       }
       
-      const uploadedFiles = await ipcRenderer.invoke('upload-gpx-files', targetFolder);
+      const uploadedFiles = await window.electronAPI.uploadGpxFiles(targetFolder);
       console.log('Upload result:', uploadedFiles);
       
       if (uploadedFiles.length > 0) {
@@ -869,6 +935,22 @@ class HikingMapApp {
       this.showError('Please enter a folder name');
       return;
     }
+    
+    // Security: Frontend validation (backend will also validate)
+    if (folderName.length > 255) {
+      this.showError('Folder name too long. Maximum 255 characters.');
+      return;
+    }
+    
+    if (/[<>:"/\\|?*\x00-\x1f]/.test(folderName)) {
+      this.showError('Folder name contains invalid characters. Use only letters, numbers, spaces, and basic punctuation.');
+      return;
+    }
+    
+    if (/^\.+$/.test(folderName) || folderName.includes('..')) {
+      this.showError('Invalid folder name.');
+      return;
+    }
 
     try {
       // Determine parent folder
@@ -877,7 +959,7 @@ class HikingMapApp {
         parentFolder = this.selectedItem.path || this.selectedItem.name;
       }
       
-      await ipcRenderer.invoke('create-folder', folderName, parentFolder);
+      await window.electronAPI.createFolder(folderName, parentFolder);
       await this.loadFileTree();
       this.hideCreateFolderModal();
       
@@ -911,7 +993,7 @@ class HikingMapApp {
   async loadSettings() {
     try {
       console.log('Loading settings...');
-      this.settings = await ipcRenderer.invoke('load-settings');
+      this.settings = await window.electronAPI.loadSettings();
       console.log('Settings loaded:', this.settings);
     } catch (error) {
       console.error('Error loading settings, using defaults:', error);
@@ -924,7 +1006,8 @@ class HikingMapApp {
         mapy: {
           apiKey: '',
           style: 'basic'
-        }
+        },
+        desaturateMap: false
       };
     }
   }
@@ -948,7 +1031,7 @@ class HikingMapApp {
           zoom: zoom
         };
 
-        await ipcRenderer.invoke('save-settings', this.settings);
+        await window.electronAPI.saveSettings(this.settings);
       } catch (error) {
         console.error('Error saving map position:', error);
       }
@@ -965,6 +1048,9 @@ class HikingMapApp {
     
     document.getElementById('mapyApiKey').value = this.settings?.mapy?.apiKey || '';
     document.getElementById('mapyStyle').value = this.settings?.mapy?.style || 'basic';
+    
+    // Load desaturate map setting
+    document.getElementById('desaturateMap').checked = this.settings?.desaturateMap || false;
     
     this.toggleMapySection();
     
@@ -992,10 +1078,17 @@ class HikingMapApp {
       const mapProvider = document.getElementById('mapyRadio').checked ? 'mapy' : 'osm';
       const mapyApiKey = document.getElementById('mapyApiKey').value.trim();
       const mapyStyle = document.getElementById('mapyStyle').value;
+      const desaturateMap = document.getElementById('desaturateMap').checked;
 
       // Validate Mapy.cz settings if selected
       if (mapProvider === 'mapy' && !mapyApiKey) {
         this.showError('Please enter a Mapy.cz API key or select OpenStreetMap');
+        return;
+      }
+      
+      // Security: Validate API key format if provided
+      if (mapyApiKey && (mapyApiKey.length < 10 || mapyApiKey.length > 200 || !/^[a-zA-Z0-9\-_]+$/.test(mapyApiKey))) {
+        this.showError('Invalid API key format. Keys should be 10-200 characters with only letters, numbers, hyphens, and underscores.');
         return;
       }
 
@@ -1005,12 +1098,14 @@ class HikingMapApp {
         apiKey: mapyApiKey,
         style: mapyStyle
       };
+      this.settings.desaturateMap = desaturateMap;
 
       // Save settings to disk
-      await ipcRenderer.invoke('save-settings', this.settings);
+      await window.electronAPI.saveSettings(this.settings);
 
       // Update the map with new settings
       this.setupTileLayer();
+      this.toggleMapDesaturation();
 
       this.hideSettingsModal();
       this.showSuccess('Settings saved successfully!');
@@ -1065,7 +1160,7 @@ class HikingMapApp {
     if (!confirm(confirmMessage)) return;
 
     try {
-      await ipcRenderer.invoke('delete-item', itemToDelete);
+      await window.electronAPI.deleteItem(itemToDelete);
       
       // Remove from visible tracks if it was a file
       if (itemToDelete.type === 'file') {
@@ -1101,9 +1196,10 @@ class HikingMapApp {
   }
 
   showError(message) {
-    // Simple error notification - you could enhance this with a proper notification system
-    console.error(message);
-    alert('Error: ' + message);
+    // Security: Don't expose internal paths or sensitive information
+    const sanitizedMessage = message.replace(/\/[^\s]*\/[^\s]*/g, '[path]');
+    console.error('Error (original):', message); // Keep full error in console for debugging
+    alert('Error: ' + sanitizedMessage);
   }
 
   showSuccess(message) {
@@ -1160,7 +1256,7 @@ class HikingMapApp {
   async setFolderColor(folder, color, colorIndicator) {
     try {
       const folderPath = folder.path || folder.name;
-      await ipcRenderer.invoke('set-folder-color', folderPath, color);
+      await window.electronAPI.setFolderColor(folderPath, color);
       
       // Update the folder color in our local data (find and update in file tree)
       this.updateFolderColorInTree(this.fileTree, folderPath, color);

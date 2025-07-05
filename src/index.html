@@ -3,8 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https://*.tile.openstreetmap.org https://api.mapy.cz;
+      connect-src 'self' https://*.tile.openstreetmap.org https://api.mapy.cz;
+      font-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    ">
     <title>Hiking Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -108,6 +119,19 @@
                 </div>
             </div>
             
+            <div class="settings-section">
+                <h4>Map Display</h4>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="desaturateMap">
+                        <span>Desaturate map colors</span>
+                    </label>
+                    <div class="setting-help">
+                        Makes the background map less colorful while keeping tracks vibrant
+                    </div>
+                </div>
+            </div>
+            
             <div class="modal-actions">
                 <button id="saveSettings" class="btn btn-primary">Save Settings</button>
                 <button id="cancelSettings" class="btn btn-secondary">Cancel</button>
@@ -134,7 +158,7 @@
         </div>
     </div>
     
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="vendor/leaflet/leaflet.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html> 

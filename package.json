@@ -4,11 +4,12 @@
   "description": "Electron app for visualizing hiking GPX tracks on OpenStreetMap or Mapy.cz",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev",
-    "build": "electron-builder",
-    "build-mac": "electron-builder --mac",
-    "postinstall": "electron-builder install-app-deps"
+    "start": "npm run copy-vendor && electron .",
+    "dev": "npm run copy-vendor && electron . --dev",
+    "copy-vendor": "node scripts/copy-vendor.js",
+    "build": "npm run copy-vendor && electron-builder",
+    "build-mac": "npm run copy-vendor && electron-builder --mac",
+    "postinstall": "electron-builder install-app-deps && npm run copy-vendor"
   },
   "keywords": [
     "hiking",
@@ -24,8 +25,8 @@
     "electron-builder": "^24.0.0"
   },
   "dependencies": {
-    "leaflet": "^1.9.4",
-    "fs-extra": "^11.0.0"
+    "fs-extra": "^11.0.0",
+    "leaflet": "^1.9.4"
   },
   "build": {
     "appId": "com.yourcompany.hiking-map",
@@ -52,4 +53,4 @@
       "node_modules/**/*"
     ]
   }
-} 
+}

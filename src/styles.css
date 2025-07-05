@@ -345,6 +345,11 @@ body {
   width: 100%;
 }
 
+/* Desaturate only the map tiles, not the tracks */
+#map .leaflet-tile-pane.desaturated {
+  filter: saturate(0.6) brightness(1.05);
+}
+
 /* Map Controls */
 .map-controls {
   position: absolute;

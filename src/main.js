@@ -3,19 +3,53 @@ const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
 
+// Security: Input validation functions
+function validateFolderName(name) {
+  if (!name || typeof name !== 'string') return false;
+  if (name.length === 0 || name.length > 255) return false;
+  // Prevent dangerous characters and path traversal
+  if (/[<>:"/\\|?*\x00-\x1f]/.test(name)) return false;
+  if (/^\.+$/.test(name)) return false; // Prevent . and ..
+  if (name.includes('..')) return false; // Extra protection
+  return true;
+}
+
+function sanitizeFilePath(filePath, basePath) {
+  const resolved = path.resolve(basePath, filePath);
+  const baseResolved = path.resolve(basePath);
+  return resolved.startsWith(baseResolved) ? resolved : null;
+}
+
+function validateColorHex(color) {
+  return /^#[0-9A-F]{6}$/i.test(color);
+}
+
 let mainWindow;
 
 // Get platform-specific app data directory
 function getAppDataPath() {
   const platform = process.platform;
+  const isDevMode = process.argv.includes('--dev');
   let appDataPath;
   
   if (platform === 'darwin') {
-    appDataPath = path.join(os.homedir(), 'Library', 'Application Support', 'Hiking Map');
+    if (isDevMode) {
+      appDataPath = path.join(os.homedir(), 'Library', 'Application Support', 'Hiking Map Dev');
+    } else {
+      appDataPath = path.join(os.homedir(), 'Library', 'Application Support', 'Hiking Map');
+    }
   } else if (platform === 'win32') {
-    appDataPath = path.join(os.homedir(), 'AppData', 'Roaming', 'Hiking Map');
+    if (isDevMode) {
+      appDataPath = path.join(os.homedir(), 'AppData', 'Roaming', 'Hiking Map Dev');
+    } else {
+      appDataPath = path.join(os.homedir(), 'AppData', 'Roaming', 'Hiking Map');
+    }
   } else {
-    appDataPath = path.join(os.homedir(), '.hiking-map');
+    if (isDevMode) {
+      appDataPath = path.join(os.homedir(), '.hiking-map-dev');
+    } else {
+      appDataPath = path.join(os.homedir(), '.hiking-map');
+    }
   }
   
   return appDataPath;
@@ -29,14 +63,18 @@ async function ensureGpxDirectory() {
 }
 
 function createWindow() {
+  const isDevMode = process.argv.includes('--dev');
+  
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     icon: path.join(__dirname, '..', 'icons', 'icon.png'),
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      enableRemoteModule: true
+      nodeIntegration: false,
+      contextIsolation: true,
+      enableRemoteModule: false,
+      preload: path.join(__dirname, 'preload.js'),
+      devTools: isDevMode // Disable dev tools in production
     },
     titleBarStyle: 'default',
     show: false
@@ -50,7 +88,7 @@ function createWindow() {
   });
 
   // Open DevTools in development
-  if (process.argv.includes('--dev')) {
+  if (isDevMode) {
     mainWindow.webContents.openDevTools();
   }
 
@@ -86,7 +124,8 @@ async function loadSettings() {
       mapy: {
         apiKey: '',
         style: 'basic' // 'basic', 'outdoor', 'winter', 'aerial'
-      }
+      },
+      desaturateMap: false
     };
   } catch (error) {
     console.error('Error loading settings:', error);
@@ -99,7 +138,8 @@ async function loadSettings() {
       mapy: {
         apiKey: '',
         style: 'basic'
-      }
+      },
+      desaturateMap: false
     };
   }
 }
@@ -248,6 +288,25 @@ ipcMain.handle('upload-gpx-files', async (event, targetFolder = null) => {
 
     for (const filePath of result.filePaths) {
       const fileName = path.basename(filePath);
+      
+      // Security: Validate file extension
+      if (!fileName.toLowerCase().endsWith('.gpx')) {
+        console.error(`Skipping invalid file type: ${fileName}`);
+        continue;
+      }
+      
+      // Security: Validate file size
+      try {
+        const stats = await fs.stat(filePath);
+        if (stats.size > 50 * 1024 * 1024) { // 50MB limit
+          console.error(`Skipping file too large: ${fileName}`);
+          continue;
+        }
+      } catch (error) {
+        console.error(`Error checking file stats: ${fileName}`, error);
+        continue;
+      }
+      
       const destPath = path.join(destDir, fileName);
       
       console.log(`Copying ${fileName} from ${filePath} to ${destPath}`);
@@ -275,16 +334,29 @@ ipcMain.handle('upload-gpx-files', async (event, targetFolder = null) => {
 
 ipcMain.handle('create-folder', async (event, folderName, parentFolder = null) => {
   try {
+    // Security: Validate folder name
+    if (!validateFolderName(folderName)) {
+      throw new Error('Invalid folder name. Use only letters, numbers, spaces, and basic punctuation.');
+    }
+    
     const gpxPath = await ensureGpxDirectory();
     
     let folderPath;
     if (parentFolder) {
-      // Create nested folder - parentFolder is already a relative path from gpxPath
-      const parentPath = path.join(gpxPath, parentFolder);
-      folderPath = path.join(parentPath, folderName);
+      // Security: Validate parent folder path
+      const sanitizedParentPath = sanitizeFilePath(parentFolder, gpxPath);
+      if (!sanitizedParentPath) {
+        throw new Error('Invalid parent folder path.');
+      }
+      folderPath = path.join(sanitizedParentPath, folderName);
     } else {
       // Create root level folder
       folderPath = path.join(gpxPath, folderName);
+    }
+    
+    // Security: Final path validation
+    if (!sanitizeFilePath(folderPath, gpxPath)) {
+      throw new Error('Invalid folder path.');
     }
     
     console.log(`Creating folder: ${folderPath}`);
@@ -327,8 +399,18 @@ ipcMain.handle('delete-item', async (event, item) => {
 
 ipcMain.handle('set-folder-color', async (event, folderPath, color) => {
   try {
+    // Security: Validate color format
+    if (!validateColorHex(color)) {
+      throw new Error('Invalid color format. Use hex format like #FF6600.');
+    }
+    
     const gpxPath = await ensureGpxDirectory();
-    const fullFolderPath = path.join(gpxPath, folderPath);
+    
+    // Security: Validate folder path
+    const fullFolderPath = sanitizeFilePath(folderPath, gpxPath);
+    if (!fullFolderPath) {
+      throw new Error('Invalid folder path.');
+    }
     
     // Read existing config or create new one
     const config = await getFolderConfig(fullFolderPath);
