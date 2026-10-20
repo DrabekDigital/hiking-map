@@ -30,7 +30,7 @@ A modern Electron desktop application for visualizing and managing your hiking G
 
 0. See releases for provided precompiled builds.
 
-1. **Install dependencies**:
+1. **Install dependencies** (requires Node.js 22+):
    ```bash
    npm install
    ```
@@ -122,12 +122,12 @@ GPX files and settings are automatically stored in platform-specific locations:
 **GPX Files:**
 - **macOS**: `~/Library/Application Support/Hiking Map/gpx/`
 - **Windows**: `%APPDATA%/Hiking Map/gpx/`
-- **Linux**: `~/.hiking-map/gpx/`
+- **Linux**: `~/.config/Hiking Map/gpx/` (migrated automatically from `~/.hiking-map/`)
 
 **Settings (including map position):**
 - **macOS**: `~/Library/Application Support/Hiking Map/settings.json`
 - **Windows**: `%APPDATA%/Hiking Map/settings.json`
-- **Linux**: `~/.hiking-map/settings.json`
+- **Linux**: `~/.config/Hiking Map/settings.json`
 
 ## Supported GPX Features
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const fs = require('fs-extra');
-const path = require('path');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 
 async function copyVendorDependencies() {
   try {
@@ -9,16 +9,16 @@ async function copyVendorDependencies() {
     
     // Ensure vendor directory exists
     const vendorDir = path.join(__dirname, '..', 'src', 'vendor');
-    await fs.ensureDir(vendorDir);
+    await fs.mkdir(vendorDir, { recursive: true });
     
     // Copy Leaflet
     const leafletSrc = path.join(__dirname, '..', 'node_modules', 'leaflet', 'dist');
     const leafletDest = path.join(vendorDir, 'leaflet');
     
-    await fs.ensureDir(leafletDest);
-    await fs.copy(path.join(leafletSrc, 'leaflet.css'), path.join(leafletDest, 'leaflet.css'));
-    await fs.copy(path.join(leafletSrc, 'leaflet.js'), path.join(leafletDest, 'leaflet.js'));
-    await fs.copy(path.join(leafletSrc, 'images'), path.join(leafletDest, 'images'));
+    await fs.mkdir(leafletDest, { recursive: true });
+    await fs.copyFile(path.join(leafletSrc, 'leaflet.css'), path.join(leafletDest, 'leaflet.css'));
+    await fs.copyFile(path.join(leafletSrc, 'leaflet.js'), path.join(leafletDest, 'leaflet.js'));
+    await fs.cp(path.join(leafletSrc, 'images'), path.join(leafletDest, 'images'), { recursive: true });
     
     console.log('✅ Vendor dependencies copied successfully');
   } catch (error) {

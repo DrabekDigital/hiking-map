@@ -21,36 +21,59 @@
   "author": "Drábek.digital s.r.o.",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^28.0.0",
-    "electron-builder": "^24.0.0"
-  },
-  "dependencies": {
-    "fs-extra": "^11.0.0",
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
     "leaflet": "^1.9.4"
   },
   "build": {
-    "appId": "com.yourcompany.hiking-map",
+    "appId": "digital.drabek.hiking-map",
     "productName": "Hiking Map",
     "directories": {
       "output": "dist"
     },
     "mac": {
       "category": "public.app-category.sports",
-      "target": "dmg",
-      "icon": "icons/icon-512.png"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "icon": "icons/icon-512.png",
+      "hardenedRuntime": true
     },
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
       "icon": "icons/icon-256.png"
     },
     "linux": {
-      "target": "AppImage",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
       "icon": "icons/icon-512.png"
     },
     "files": [
       "src/**/*",
-      "icons/**/*",
-      "node_modules/**/*"
+      "icons/**/*"
     ]
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
