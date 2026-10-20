@@ -824,7 +824,7 @@ class HikingMapApp {
     
     return `
       <div style="font-family: inherit;">
-        <h4 style="margin: 0 0 8px 0; color: #24292e;">${track.name.replace('.gpx', '')}</h4>
+        <h4 style="margin: 0 0 8px 0; color: #24292e;">${sanitizeText(track.name.replace(/\.gpx$/i, ''))}</h4>
         <div style="font-size: 12px; color: #586069;">
           <div>📏 Distance: ${distance} km</div>
           <div>⛰️ Elevation: ${elevation}</div>
