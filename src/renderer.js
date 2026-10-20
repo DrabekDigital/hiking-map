@@ -1167,24 +1167,32 @@ class HikingMapApp {
         this.hideTrack(itemToDelete);
         this.checkedItems.delete(itemToDelete.path);
       } else if (itemToDelete.type === 'folder') {
-        // Remove all children from visible tracks
-        const folderItem = this.fileTree.find(item => 
-          item.type === 'folder' && item.name === itemToDelete.name
-        );
-        if (folderItem && folderItem.children) {
-          folderItem.children.forEach(child => {
-            this.hideTrack(child);
-            this.checkedItems.delete(child.path);
+        // Remove all descendants (including nested folders) from visible tracks
+        const folderKey = itemToDelete.path || itemToDelete.name;
+        const removeDescendants = (children) => {
+          (children || []).forEach(child => {
+            if (child.type === 'folder') {
+              this.checkedItems.delete(child.path || child.name);
+              removeDescendants(child.children);
+            } else {
+              this.hideTrack(child);
+              this.checkedItems.delete(child.path);
+            }
           });
-        }
-        this.checkedItems.delete(itemToDelete.name);
+        };
+        removeDescendants(itemToDelete.children);
+        this.checkedItems.delete(folderKey);
       }
 
-      // Clear selection if the deleted item was selected
-      if (this.selectedItem && 
-          ((itemToDelete.type === 'file' && this.selectedItem.path === itemToDelete.path) ||
-           (itemToDelete.type === 'folder' && this.selectedItem.name === itemToDelete.name))) {
-        this.clearSelection();
+      // Clear selection if the deleted item was selected or lives inside the deleted folder
+      if (this.selectedItem) {
+        const selectedKey = this.selectedItem.path || this.selectedItem.name;
+        const deletedKey = itemToDelete.path || itemToDelete.name;
+        const isSame = this.selectedItem.type === itemToDelete.type && selectedKey === deletedKey;
+        const isInside = itemToDelete.type === 'folder' && this.isInsideFolder(this.selectedItem, deletedKey);
+        if (isSame || isInside) {
+          this.clearSelection();
+        }
       }
 
       await this.loadFileTree();
@@ -1193,6 +1201,25 @@ class HikingMapApp {
       console.error('Error deleting item:', error);
       this.showError('Failed to delete item: ' + error.message);
     }
+  }
+
+  isInsideFolder(item, folderKey) {
+    // Find the folder in the tree and check whether item is one of its descendants
+    const findFolder = (items) => {
+      for (const candidate of items || []) {
+        if (candidate.type !== 'folder') continue;
+        if ((candidate.path || candidate.name) === folderKey) return candidate;
+        const found = findFolder(candidate.children);
+        if (found) return found;
+      }
+      return null;
+    };
+    const containsItem = (children) => (children || []).some(child =>
+      (child.type === item.type && (child.path || child.name) === (item.path || item.name)) ||
+      (child.type === 'folder' && containsItem(child.children))
+    );
+    const folder = findFolder(this.fileTree);
+    return folder ? containsItem(folder.children) : false;
   }
 
   showError(message) {

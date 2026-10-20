@@ -384,7 +384,11 @@ ipcMain.handle('delete-item', async (event, item) => {
       await fs.remove(item.path);
     } else if (item.type === 'folder') {
       // Delete folder and all contents
-      const folderPath = path.join(gpxPath, item.name);
+      // Use the relative path so nested folders resolve correctly
+      const folderPath = sanitizeFilePath(item.path || item.name, gpxPath);
+      if (!folderPath || folderPath === path.resolve(gpxPath)) {
+        throw new Error('Invalid folder path.');
+      }
       console.log(`Deleting folder: ${folderPath}`);
       await fs.remove(folderPath);
     }
