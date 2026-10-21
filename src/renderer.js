@@ -41,8 +41,8 @@ class HikingMapApp {
 
   initMap() {
     // Initialize Leaflet map with saved position
-    const center = this.settings?.map?.center || [49.2827, -123.1207];
-    const zoom = this.settings?.map?.zoom || 10;
+    const center = this.settings?.map?.center || [49.8175, 15.4730];
+    const zoom = this.settings?.map?.zoom || 7;
     
     this.map = L.map('map').setView(center, zoom);
 
@@ -640,10 +640,10 @@ class HikingMapApp {
 
       // Load and parse GPX file
       const gpxContent = await window.electronAPI.readGpxFile(track.path);
-      const gpxData = this.parseGpx(gpxContent);
+      const { segments: gpxData, waypoints } = this.parseGpx(gpxContent);
       
-      if (!gpxData || gpxData.length === 0) {
-        throw new Error('No track data found in GPX file');
+      if (gpxData.length === 0 && waypoints.length === 0) {
+        throw new Error('No track, route or waypoint data found in GPX file');
       }
 
       // Create Leaflet layer
@@ -672,6 +672,20 @@ class HikingMapApp {
         // Add both polylines to the layer (border first, then main track)
         layer.addLayer(borderPolyline);
         layer.addLayer(polyline);
+      });
+
+      waypoints.forEach(waypoint => {
+        const marker = L.circleMarker([waypoint.lat, waypoint.lon], {
+          radius: 6,
+          color: '#FFFFFF',
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 1
+        });
+        if (waypoint.name) {
+          marker.bindPopup(sanitizeText(waypoint.name));
+        }
+        layer.addLayer(marker);
       });
       
       this.gpxLayers.set(track.path, layer);
@@ -726,10 +740,28 @@ class HikingMapApp {
         }
       }
       
-      return tracks;
+      // Routes (<rte>) are planned paths; draw them like track segments
+      const rteElements = xmlDoc.getElementsByTagName('rte');
+      for (let i = 0; i < rteElements.length; i++) {
+        const segment = this.parsePoints(rteElements[i].getElementsByTagName('rtept'));
+        if (segment) tracks.push(segment);
+      }
+
+      const waypoints = [];
+      const wptElements = xmlDoc.getElementsByTagName('wpt');
+      for (let i = 0; i < wptElements.length; i++) {
+        const wpt = wptElements[i];
+        const lat = parseFloat(wpt.getAttribute('lat'));
+        const lon = parseFloat(wpt.getAttribute('lon'));
+        if (isNaN(lat) || isNaN(lon)) continue;
+        const nameElement = wpt.getElementsByTagName('name')[0];
+        waypoints.push({ lat, lon, name: nameElement ? nameElement.textContent.trim() : '' });
+      }
+
+      return { segments: tracks, waypoints };
     } catch (error) {
       console.error('Error parsing GPX:', error);
-      return [];
+      return { segments: [], waypoints: [] };
     }
   }
 
@@ -1001,8 +1033,8 @@ class HikingMapApp {
       console.error('Error loading settings, using defaults:', error);
       this.settings = {
         map: {
-          center: [49.2827, -123.1207],
-          zoom: 10
+          center: [49.8175, 15.4730],
+          zoom: 7
         },
         mapProvider: 'osm',
         mapy: {
