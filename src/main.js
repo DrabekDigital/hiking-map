@@ -15,9 +15,21 @@ function validateFolderName(name) {
 }
 
 function sanitizeFilePath(filePath, basePath) {
+  if (!filePath || typeof filePath !== 'string') return null;
   const resolved = path.resolve(basePath, filePath);
   const baseResolved = path.resolve(basePath);
-  return resolved.startsWith(baseResolved) ? resolved : null;
+  // Compare with a trailing separator so "/gpx-other" doesn't pass as inside "/gpx"
+  if (resolved === baseResolved || resolved.startsWith(baseResolved + path.sep)) {
+    return resolved;
+  }
+  return null;
+}
+
+// Resolve a GPX file path and make sure it lives inside the GPX directory
+function resolveGpxFile(filePath, gpxPath) {
+  const resolved = sanitizeFilePath(filePath, gpxPath);
+  if (!resolved || !resolved.toLowerCase().endsWith('.gpx')) return null;
+  return resolved;
 }
 
 function validateColorHex(color) {
@@ -252,7 +264,13 @@ ipcMain.handle('get-gpx-files', async () => {
 
 ipcMain.handle('read-gpx-file', async (event, filePath) => {
   try {
-    const content = await fs.readFile(filePath, 'utf-8');
+    // Security: Only allow reading GPX files inside the GPX directory
+    const gpxPath = await ensureGpxDirectory();
+    const safePath = resolveGpxFile(filePath, gpxPath);
+    if (!safePath) {
+      throw new Error('Invalid file path.');
+    }
+    const content = await fs.readFile(safePath, 'utf-8');
     return content;
   } catch (error) {
     console.error('Error reading GPX file:', error);
@@ -279,7 +297,11 @@ ipcMain.handle('upload-gpx-files', async (event, targetFolder = null) => {
     // Determine destination path
     let destDir = gpxPath;
     if (targetFolder) {
-      destDir = path.join(gpxPath, targetFolder);
+      // Security: Validate target folder path
+      destDir = sanitizeFilePath(targetFolder, gpxPath);
+      if (!destDir) {
+        throw new Error('Invalid target folder path.');
+      }
       await fs.ensureDir(destDir); // Ensure the target folder exists
     }
     
@@ -380,8 +402,13 @@ ipcMain.handle('delete-item', async (event, item) => {
     
     if (item.type === 'file') {
       // Delete single file
-      console.log(`Deleting file: ${item.path}`);
-      await fs.remove(item.path);
+      // Security: Only allow deleting GPX files inside the GPX directory
+      const filePath = resolveGpxFile(item.path, gpxPath);
+      if (!filePath) {
+        throw new Error('Invalid file path.');
+      }
+      console.log(`Deleting file: ${filePath}`);
+      await fs.remove(filePath);
     } else if (item.type === 'folder') {
       // Delete folder and all contents
       // Use the relative path so nested folders resolve correctly
