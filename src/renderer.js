@@ -735,50 +735,11 @@ class HikingMapApp {
         const trkSegs = trk.getElementsByTagName('trkseg');
         
         for (let j = 0; j < trkSegs.length; j++) {
-          const trkSeg = trkSegs[j];
-          const trkPts = trkSeg.getElementsByTagName('trkpt');
-          
-          const points = [];
-          let totalDistance = 0;
-          let minEle = Infinity;
-          let maxEle = -Infinity;
-          
-          for (let k = 0; k < trkPts.length; k++) {
-            const pt = trkPts[k];
-            const lat = parseFloat(pt.getAttribute('lat'));
-            const lon = parseFloat(pt.getAttribute('lon'));
-            
-            if (!isNaN(lat) && !isNaN(lon)) {
-              const eleElement = pt.getElementsByTagName('ele')[0];
-              const elevation = eleElement ? parseFloat(eleElement.textContent) : null;
-              
-              if (elevation !== null && !isNaN(elevation)) {
-                minEle = Math.min(minEle, elevation);
-                maxEle = Math.max(maxEle, elevation);
-              }
-              
-              // Calculate distance from the previous valid point
-              // (index by points, not k, since invalid points are skipped)
-              if (points.length > 0) {
-                const prevPt = points[points.length - 1];
-                totalDistance += this.calculateDistance(prevPt[0], prevPt[1], lat, lon);
-              }
-              
-              points.push([lat, lon]);
-            }
-          }
-          
-          if (points.length > 0) {
-            tracks.push({
-              points: points,
-              distance: totalDistance,
-              minElevation: minEle === Infinity ? null : minEle,
-              maxElevation: maxEle === -Infinity ? null : maxEle
-            });
-          }
+          const segment = this.parsePoints(trkSegs[j].getElementsByTagName('trkpt'));
+          if (segment) tracks.push(segment);
         }
       }
-      
+
       // Routes (<rte>) are planned paths; draw them like track segments
       const rteElements = xmlDoc.getElementsByTagName('rte');
       for (let i = 0; i < rteElements.length; i++) {
@@ -804,6 +765,7 @@ class HikingMapApp {
     }
   }
 
+  // Build a segment (points, distance, elevation range) from <trkpt>/<rtept> elements
   parsePoints(ptElements) {
     const points = [];
     let totalDistance = 0;
