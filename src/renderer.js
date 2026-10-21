@@ -754,13 +754,14 @@ class HikingMapApp {
           maxEle = Math.max(maxEle, elevation);
         }
         
-        points.push([lat, lon]);
-        
-        // Calculate distance
-        if (k > 0) {
-          const prevPt = points[k - 1];
+        // Calculate distance from the previous valid point
+        // (index by points, not k, since invalid points are skipped)
+        if (points.length > 0) {
+          const prevPt = points[points.length - 1];
           totalDistance += this.calculateDistance(prevPt[0], prevPt[1], lat, lon);
         }
+        
+        points.push([lat, lon]);
       }
     }
     
