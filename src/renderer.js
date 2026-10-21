@@ -749,7 +749,7 @@ class HikingMapApp {
         const eleElement = pt.getElementsByTagName('ele')[0];
         const elevation = eleElement ? parseFloat(eleElement.textContent) : null;
         
-        if (elevation !== null) {
+        if (elevation !== null && !isNaN(elevation)) {
           minEle = Math.min(minEle, elevation);
           maxEle = Math.max(maxEle, elevation);
         }
@@ -820,7 +820,8 @@ class HikingMapApp {
 
   createTrackPopup(track, segment) {
     const distance = segment.distance.toFixed(2);
-    const elevation = segment.minElevation && segment.maxElevation
+    // Compare against null explicitly so tracks at 0 m (sea level) still show elevation
+    const elevation = segment.minElevation !== null && segment.maxElevation !== null
       ? `${segment.minElevation.toFixed(0)}m - ${segment.maxElevation.toFixed(0)}m`
       : 'N/A';
     
