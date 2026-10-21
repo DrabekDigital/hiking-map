@@ -1,6 +1,6 @@
 {
   "name": "hiking-map",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Electron app for visualizing hiking GPX tracks on OpenStreetMap or Mapy.cz",
   "main": "src/main.js",
   "scripts": {
