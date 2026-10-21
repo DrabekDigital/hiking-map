@@ -117,8 +117,8 @@ async function loadSettings() {
     // Default settings
     return {
       map: {
-        center: [49.2827, -123.1207], // Vancouver, BC
-        zoom: 10
+        center: [49.8175, 15.4730], // Czech Republic
+        zoom: 7
       },
       mapProvider: 'osm', // 'osm' or 'mapy'
       mapy: {
@@ -131,8 +131,8 @@ async function loadSettings() {
     console.error('Error loading settings:', error);
     return {
       map: {
-        center: [49.2827, -123.1207],
-        zoom: 10
+        center: [49.8175, 15.4730],
+        zoom: 7
       },
       mapProvider: 'osm',
       mapy: {
