@@ -1,6 +1,6 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
-const fs = require('fs-extra');
+const fs = require('./fs-utils');
 const os = require('os');
 
 // Security: Input validation functions
@@ -39,32 +39,31 @@ function validateColorHex(color) {
 let mainWindow;
 
 // Get platform-specific app data directory
+// (~/Library/Application Support on macOS, %APPDATA% on Windows, ~/.config on Linux)
 function getAppDataPath() {
-  const platform = process.platform;
   const isDevMode = process.argv.includes('--dev');
-  let appDataPath;
-  
-  if (platform === 'darwin') {
-    if (isDevMode) {
-      appDataPath = path.join(os.homedir(), 'Library', 'Application Support', 'Hiking Map Dev');
-    } else {
-      appDataPath = path.join(os.homedir(), 'Library', 'Application Support', 'Hiking Map');
-    }
-  } else if (platform === 'win32') {
-    if (isDevMode) {
-      appDataPath = path.join(os.homedir(), 'AppData', 'Roaming', 'Hiking Map Dev');
-    } else {
-      appDataPath = path.join(os.homedir(), 'AppData', 'Roaming', 'Hiking Map');
-    }
-  } else {
-    if (isDevMode) {
-      appDataPath = path.join(os.homedir(), '.hiking-map-dev');
-    } else {
-      appDataPath = path.join(os.homedir(), '.hiking-map');
-    }
+  return path.join(app.getPath('appData'), isDevMode ? 'Hiking Map Dev' : 'Hiking Map');
+}
+
+// Linux builds used to store data in ~/.hiking-map(-dev); move it to the XDG location once
+async function migrateLegacyAppData() {
+  if (process.platform !== 'linux') return;
+
+  const isDevMode = process.argv.includes('--dev');
+  const legacyPath = path.join(os.homedir(), isDevMode ? '.hiking-map-dev' : '.hiking-map');
+  const appDataPath = getAppDataPath();
+
+  if (!(await fs.pathExists(legacyPath)) || (await fs.pathExists(appDataPath))) return;
+
+  try {
+    await fs.ensureDir(path.dirname(appDataPath));
+    await fs.rename(legacyPath, appDataPath);
+    console.log(`Migrated app data from ${legacyPath} to ${appDataPath}`);
+  } catch (error) {
+    // rename fails across filesystems; fall back to copying and keep the original
+    console.warn('Rename of legacy app data failed, copying instead:', error);
+    await fs.copy(legacyPath, appDataPath);
   }
-  
-  return appDataPath;
 }
 
 // Ensure GPX directory exists
@@ -84,7 +83,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      enableRemoteModule: false,
+      sandbox: true,
       preload: path.join(__dirname, 'preload.js'),
       devTools: isDevMode // Disable dev tools in production
     },
@@ -92,7 +91,20 @@ function createWindow() {
     show: false
   });
 
-  mainWindow.loadFile('src/index.html');
+  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+
+  // Security: Never open new windows or navigate away from the app;
+  // web links (e.g. map attribution) open in the default browser instead
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url !== mainWindow.webContents.getURL()) {
+      event.preventDefault();
+      if (/^https?:\/\//.test(url)) shell.openExternal(url);
+    }
+  });
   
   mainWindow.once('ready-to-show', () => {
     mainWindow.maximize();
@@ -458,7 +470,12 @@ ipcMain.handle('set-folder-color', async (event, folderPath, color) => {
   }
 });
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  try {
+    await migrateLegacyAppData();
+  } catch (error) {
+    console.error('Error migrating legacy app data:', error);
+  }
   console.log('App ready, creating window...');
   createWindow();
 });
