@@ -721,46 +721,8 @@ class HikingMapApp {
         const trkSegs = trk.getElementsByTagName('trkseg');
         
         for (let j = 0; j < trkSegs.length; j++) {
-          const trkSeg = trkSegs[j];
-          const trkPts = trkSeg.getElementsByTagName('trkpt');
-          
-          const points = [];
-          let totalDistance = 0;
-          let minEle = Infinity;
-          let maxEle = -Infinity;
-          
-          for (let k = 0; k < trkPts.length; k++) {
-            const pt = trkPts[k];
-            const lat = parseFloat(pt.getAttribute('lat'));
-            const lon = parseFloat(pt.getAttribute('lon'));
-            
-            if (!isNaN(lat) && !isNaN(lon)) {
-              const eleElement = pt.getElementsByTagName('ele')[0];
-              const elevation = eleElement ? parseFloat(eleElement.textContent) : null;
-              
-              if (elevation !== null) {
-                minEle = Math.min(minEle, elevation);
-                maxEle = Math.max(maxEle, elevation);
-              }
-              
-              points.push([lat, lon]);
-              
-              // Calculate distance
-              if (k > 0) {
-                const prevPt = points[k - 1];
-                totalDistance += this.calculateDistance(prevPt[0], prevPt[1], lat, lon);
-              }
-            }
-          }
-          
-          if (points.length > 0) {
-            tracks.push({
-              points: points,
-              distance: totalDistance,
-              minElevation: minEle === Infinity ? null : minEle,
-              maxElevation: maxEle === -Infinity ? null : maxEle
-            });
-          }
+          const segment = this.parsePoints(trkSegs[j].getElementsByTagName('trkpt'));
+          if (segment) tracks.push(segment);
         }
       }
       
@@ -769,6 +731,46 @@ class HikingMapApp {
       console.error('Error parsing GPX:', error);
       return [];
     }
+  }
+
+  // Build a segment (points, distance, elevation range) from <trkpt>/<rtept> elements
+  parsePoints(ptElements) {
+    const points = [];
+    let totalDistance = 0;
+    let minEle = Infinity;
+    let maxEle = -Infinity;
+    
+    for (let k = 0; k < ptElements.length; k++) {
+      const pt = ptElements[k];
+      const lat = parseFloat(pt.getAttribute('lat'));
+      const lon = parseFloat(pt.getAttribute('lon'));
+      
+      if (!isNaN(lat) && !isNaN(lon)) {
+        const eleElement = pt.getElementsByTagName('ele')[0];
+        const elevation = eleElement ? parseFloat(eleElement.textContent) : null;
+        
+        if (elevation !== null) {
+          minEle = Math.min(minEle, elevation);
+          maxEle = Math.max(maxEle, elevation);
+        }
+        
+        points.push([lat, lon]);
+        
+        // Calculate distance
+        if (k > 0) {
+          const prevPt = points[k - 1];
+          totalDistance += this.calculateDistance(prevPt[0], prevPt[1], lat, lon);
+        }
+      }
+    }
+    
+    if (points.length === 0) return null;
+    return {
+      points: points,
+      distance: totalDistance,
+      minElevation: minEle === Infinity ? null : minEle,
+      maxElevation: maxEle === -Infinity ? null : maxEle
+    };
   }
 
   calculateDistance(lat1, lon1, lat2, lon2) {
